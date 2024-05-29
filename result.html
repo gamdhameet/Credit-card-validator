@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validation Result</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h2 {
+            margin-bottom: 20px;
+            color: #333333;
+        }
+        p {
+            color: #666666;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        footer {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #777777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Validation Result</h2>
+        {{if .Valid}}
+            <p>The credit card number is <strong>valid</strong>.</p>
+        {{else}}
+            <p>The credit card number is <strong>invalid</strong>.</p>
+        {{end}}
+        <p><strong>Credit Card Number:</strong> {{.CardNumber}}</p>
+        <p><strong>Card Type:</strong> {{.CardType}}</p>
+        <!-- You can add more card details here -->
+    </div>
+    <footer>
+        &copy; 2024 Your Company Name. All rights reserved.
+    </footer>
+</body>
+</html>

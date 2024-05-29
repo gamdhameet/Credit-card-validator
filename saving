@@ -21,9 +21,9 @@ type Response struct {
 func main() {
 	//tmpl := template.Must(template.ParseFiles("index.html"))
 	// Register the creditCardValidator function to handle requests at the root ("/") path.
-	//http.HandleFunc("/", creditCardValidator)
+	http.HandleFunc("/", creditCardValidator)
 	http.HandleFunc("/validate", serveIndex)
-	http.HandleFunc("/result", creditCardValidator)
+	//http.HandleFunc("/result", serveResult)
 	fmt.Println("Listening on port: 8080")
 
 	// Start an HTTP server listening on the specified port.
@@ -37,6 +37,11 @@ func serveIndex(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("index.html"))
 	tmpl.Execute(w, nil)
 }
+
+//func serveResult(w http.ResponseWriter, r *http.Request) {
+//	tmpl2 := template.Must(template.ParseFiles("result.html"))
+//	tmpl2.Execute(w, nil)
+//}
 
 // creditCardValidator handles the credit card validation logic and JSON response.
 func creditCardValidator(writer http.ResponseWriter, request *http.Request) {
