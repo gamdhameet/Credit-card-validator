@@ -66,22 +66,6 @@ func creditCardValidator(writer http.ResponseWriter, request *http.Request) {
 	tmpl2.Execute(writer, result)
 }
 
-// Create a response struct with the validation result.
-//response := Response{Valid: isValid}
-
-// Marshal the response struct into JSON format.
-//jsonResponse, err := json.Marshal(response)
-//if err != nil {
-//	http.Error(writer, "Error creating response", http.StatusInternalServerError)
-//	return
-//}
-
-// Set the content type header to indicate JSON response.
-//writer.Header().Set("Content-Type", "application/json")
-//
-//// Write the JSON response back to the client.
-//writer.Write(jsonResponse)
-
 func getCardType(cardNumber string) string {
 	cardNumber = strings.ReplaceAll(cardNumber, " ", "")
 	switch cardNumber[0] {
