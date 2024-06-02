@@ -1,11 +1,20 @@
 package main
 
 import (
+	"database/sql"
+	//"database/sql"
 	"fmt"
 	"html/template"
+	//"log"
 	"net/http"
+	//"os"
 	"strings"
+	//"time"
+
+	_ "github.com/lib/pq"
 )
+
+var db *sql.DB
 
 type ValidationResult struct {
 	Valid      bool
@@ -61,7 +70,11 @@ func creditCardValidator(writer http.ResponseWriter, request *http.Request) {
 		CardNumber: cardNumber,
 		CardType:   cardType,
 	}
-
+	err = saveCardInfo(result)
+	if err != nil {
+		http.Error(writer, "Failed to save data", http.StatusInternalServerError)
+		return
+	}
 	tmpl2 := template.Must(template.ParseFiles("result.html"))
 	tmpl2.Execute(writer, result)
 }
@@ -80,4 +93,12 @@ func getCardType(cardNumber string) string {
 	default:
 		return "Unknown"
 	}
+}
+func saveCardInfo(result ValidationResult) error {
+	query := `
+		INSERT INTO card_info (card_number, card_type)
+		VALUES ($1, $2, $3, $4)`
+
+	_, err := db.Exec(query, result.CardNumber, result.CardType)
+	return err
 }
