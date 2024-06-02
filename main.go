@@ -1,23 +1,40 @@
 package main
 
 import (
-	"database/sql"
-	"log"
-	"os"
-
-	//"database/sql"
+	"context"
 	"fmt"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"html/template"
-	//"log"
+	"log"
 	"net/http"
-	//"os"
-	"strings"
-	//"time"
 
-	_ "github.com/lib/pq"
+	"strings"
+	"time"
 )
 
-var db *sql.DB
+var client *mongo.Client
+
+func init() {
+	// Set client options
+	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+
+	// Connect to MongoDB
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	var err error
+	client, err = mongo.Connect(ctx, clientOptions)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Check the connection
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		log.Fatal("Could not connect to MongoDB:", err)
+	}
+	fmt.Println("Connected to MongoDB!")
+}
 
 type ValidationResult struct {
 	Valid      bool
@@ -35,17 +52,13 @@ func main() {
 	// Register the creditCardValidator function to handle requests at the root ("/") path.
 	//http.HandleFunc("/", creditCardValidator)
 	var err error
-	db, err = sql.Open("postgres", os.Getenv("DATABASE_URL"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
 	http.HandleFunc("/validate", serveIndex)
 	http.HandleFunc("/result", creditCardValidator)
 	fmt.Println("Listening on port: 8080")
 
 	// Start an HTTP server listening on the specified port.
 	err = http.ListenAndServe(":8080", nil)
+
 	if err != nil {
 		fmt.Println("Error:", err) // Print an error message if the server fails to start.
 	}
@@ -81,12 +94,12 @@ func creditCardValidator(writer http.ResponseWriter, request *http.Request) {
 	}
 	err = saveCardInfo(result)
 	if err != nil {
-		http.Error(writer, "Failed to save data", http.StatusInternalServerError)
+		//http.Error(writer, "Failed to save data", http.StatusInternalServerError)
 		log.Printf("Failed to save data: %v", err)
-		return
 	}
 	tmpl2 := template.Must(template.ParseFiles("result.html"))
 	tmpl2.Execute(writer, result)
+	//log.Printf("Failed to save data: %v", err)
 }
 
 func getCardType(cardNumber string) string {
@@ -104,15 +117,22 @@ func getCardType(cardNumber string) string {
 		return "Unknown"
 	}
 }
-func saveCardInfo(result ValidationResult) error {
-	query := `
-		INSERT INTO card_info (card_number, card_type, cardholder_name, expiry_date)
-		VALUES ($1, $2, $3, $4)`
 
-	_, err := db.Exec(query, result.CardNumber, result.CardType)
-	if err != nil {
-		log.Printf("Error saving card info: %v\n", err)
-		return err
+type CardInfo struct {
+	Valid      string `bson:"valid"`
+	CardNumber string `bson:"cardNumber"`
+	CardType   string `bson:"cardType"`
+}
+
+func saveCardInfo(result ValidationResult) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	collection := client.Database("your_database").Collection("card_info")
+	card := CardInfo{
+		Valid:      fmt.Sprintf("%t", result.Valid),
+		CardNumber: result.CardNumber,
+		CardType:   result.CardType,
 	}
-	return nil
+	_, err := collection.InsertOne(ctx, card)
+	return err
 }
