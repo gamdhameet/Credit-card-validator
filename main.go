@@ -2,6 +2,9 @@ package main
 
 import (
 	"database/sql"
+	"log"
+	"os"
+
 	//"database/sql"
 	"fmt"
 	"html/template"
@@ -31,12 +34,18 @@ func main() {
 	//tmpl := template.Must(template.ParseFiles("index.html"))
 	// Register the creditCardValidator function to handle requests at the root ("/") path.
 	//http.HandleFunc("/", creditCardValidator)
+	var err error
+	db, err = sql.Open("postgres", os.Getenv("DATABASE_URL"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
 	http.HandleFunc("/validate", serveIndex)
 	http.HandleFunc("/result", creditCardValidator)
 	fmt.Println("Listening on port: 8080")
 
 	// Start an HTTP server listening on the specified port.
-	err := http.ListenAndServe(":8080", nil)
+	err = http.ListenAndServe(":8080", nil)
 	if err != nil {
 		fmt.Println("Error:", err) // Print an error message if the server fails to start.
 	}
@@ -73,6 +82,7 @@ func creditCardValidator(writer http.ResponseWriter, request *http.Request) {
 	err = saveCardInfo(result)
 	if err != nil {
 		http.Error(writer, "Failed to save data", http.StatusInternalServerError)
+		log.Printf("Failed to save data: %v", err)
 		return
 	}
 	tmpl2 := template.Must(template.ParseFiles("result.html"))
@@ -96,9 +106,13 @@ func getCardType(cardNumber string) string {
 }
 func saveCardInfo(result ValidationResult) error {
 	query := `
-		INSERT INTO card_info (card_number, card_type)
+		INSERT INTO card_info (card_number, card_type, cardholder_name, expiry_date)
 		VALUES ($1, $2, $3, $4)`
 
 	_, err := db.Exec(query, result.CardNumber, result.CardType)
-	return err
+	if err != nil {
+		log.Printf("Error saving card info: %v\n", err)
+		return err
+	}
+	return nil
 }
